@@ -6,42 +6,71 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
+import java.lang.IllegalArgumentException;
+import java.lang.Exception;
 
 public class ConnectionX {
 	
-	static final int connectionTimes = 5;
-	static final int timeout = 5000;
+	static final int connectionTimes = 5;  	// times the program tryes to connect to the server
+	static final int timeout = 5000; 		// time amount that the program waits for a response from the server
 	
-	public static void main(String[] args) throws Exception {
-			if(args.length < 2){
-				System.out.println("Parametrit: ip, portti");
-				System.exit(0);
-			}
-			InetAddress targetAddr = InetAddress.getByName(args[0]);
-			int targetPort = Integer.parseInt(args[1]);
-			//TODO tarkista portin oikeus
-			
-			ServerSocket serverSocket = new ServerSocket(0);
-			serverSocket.setSoTimeout(timeout);
-			int port = serverSocket.getLocalPort();
-			byte[] data = Integer.toString(port).getBytes();
-			
-			DatagramSocket datagramSocket = new DatagramSocket();
-			DatagramPacket datagramPacket = new DatagramPacket(data, data.length, targetAddr, targetPort);
-			
-			for(int i = connectionTimes - 1; i >= 0; i--){
-				datagramSocket.send(datagramPacket);
-				System.out.println("UDP packet sent: "+port);
-				try{
-					Socket xSocket = serverSocket.accept();
-					System.out.println("Connection succeful! XD");
-					break;
-					
-				} catch(SocketException se){
-					System.err.println("Server not found, retrying "+ i +" more times...");
-				} catch(SocketTimeoutException ste){
-					System.err.println("Server not found, retrying "+ i +" more times...");
-				}
+	private String address;
+	private int port;
+	
+	public ConnectionX(String address, int port){
+		try{
+			this.setAddress(address);
+			this.setPort(port);
+		} catch(IllegalArgumentException iea){
+			System.out.println(iea.getMessage());
+			System.exit(2);
+		}
+	}
+	
+	public Socket connect() throws Exception {
+		InetAddress targetAddr = InetAddress.getByName(address);
+
+		ServerSocket serverSocket = new ServerSocket(0);
+		serverSocket.setSoTimeout(timeout);
+		int tcpPort = serverSocket.getLocalPort();
+		byte[] data = Integer.toString(tcpPort).getBytes();
+		
+		DatagramSocket datagramSocket = new DatagramSocket();
+		DatagramPacket datagramPacket = new DatagramPacket(data, data.length, targetAddr, port);
+		
+		for(int i = connectionTimes - 1; i >= 0; i--){
+			datagramSocket.send(datagramPacket);
+			System.out.println("UDP packet sent to address "+targetAddr.getHostAddress()+":"+port+" with data: "+tcpPort);
+			try{
+				Socket xSocket = serverSocket.accept();
+				System.out.println("Connection succeful! XD");
+				return xSocket;
+				
+			} catch(SocketException se){
+				System.err.println("Server not found, retrying "+ i +" more times...");
+			} catch(SocketTimeoutException ste){
+				System.err.println("Server not found, retrying "+ i +" more times...");
 			}
 		}
+		throw new Exception("Connection unsuccessful :(");
+	}
+	
+	public void setAddress(String address) throws IllegalArgumentException {
+		if(address == null || address.equals("")){
+			throw new IllegalArgumentException("Invalid address");
+		}
+		this.address = address;
+	}
+	public void setPort(int port) throws IllegalArgumentException {
+		if(port < 1024 || port > 65535){
+			throw new IllegalArgumentException("Invalid port number");
+		}
+		this.port = port;
+	}
+	public String getAddress(){
+		return address;
+	}
+	public int getPort(){
+		return port;
+	}
 }
