@@ -30,9 +30,9 @@ public class ClientStreamHandlerX {
 			oOut = new ObjectOutputStream(oS);
 			oIn = new ObjectInputStream(iS);
 		} catch(SocketException se){
-			close();
+			close(true);
 		} catch(IOException ioe){
-			close();
+			close(true);
 		}
 	}
 	
@@ -65,8 +65,9 @@ public class ClientStreamHandlerX {
 					int answer = 0;
 					switch(data){
 						case 0:
-							//TODO close
-							break;
+							shutDownSummers();
+							close(false);
+							return;
 						case 1:
 							answer = sharedData.sumAll();
 							break;
@@ -79,19 +80,27 @@ public class ClientStreamHandlerX {
 						default:
 							answer = -1;
 					}
-					System.out.println("Sending value to Y: " + answer);
 					oOut.writeInt(answer);
 					oOut.flush();
-				}
+					System.out.println("Sending value to Y: " + answer);				}
 			}
 		} catch(IOException ioe){
 			ioe.printStackTrace(System.out);
 		}
+		close(true);
+	}
+	
+	private void shutDownSummers(){
+		for(Summer s : summers){
+			s.shutdown();
+		}
 	}
 
-	public void close() throws IOException{
-		oOut.writeInt(-1);
-		oOut.flush();
+	public void close(boolean sendError) throws IOException{
+		if(sendError){
+			oOut.writeInt(-1);
+			oOut.flush();
+		}
 		oOut.close();
 		oIn.close();
 		oS.close();

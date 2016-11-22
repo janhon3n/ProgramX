@@ -10,7 +10,9 @@ public class SharedData {
 	}
 	
 	public void addToLocker(int index, int value) throws IllegalArgumentException{
-		if(index < 0 || index >= dataLockers.length)
+		if(index < 0 || index >= dataLockers.length){
+			throw new IllegalArgumentException("Locker index out of bounds");
+		}
 		dataLockers[index].add(value);
 	}
 	

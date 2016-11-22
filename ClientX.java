@@ -19,7 +19,6 @@ public class ClientX {
 			s = conX.connect();
 			ClientStreamHandlerX cshx = new ClientStreamHandlerX(s);
 			cshx.listen();
-			cshx.close();
 			
 		} catch(Exception e){
 			e.printStackTrace(System.out);

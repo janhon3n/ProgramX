@@ -12,6 +12,8 @@ public class Summer extends Thread {
 	
 	private final int index;
 	private final SharedData sharedData;
+	
+	private boolean shutdown = false;
 
 	public Summer(SharedData sd, int index) throws IOException{
 		this.sharedData = sd;
@@ -27,6 +29,9 @@ public class Summer extends Thread {
 			ObjectInputStream oIn = new ObjectInputStream(iS);
 		
 			while(true){
+				if(shutdown){
+					return;
+				}
 				if(oIn.available() > 0){
 					int value = oIn.readInt();
 					System.out.println("Recieved data: "+value);
@@ -47,5 +52,9 @@ public class Summer extends Thread {
 
 	public int getPort(){
 		return serverSocket.getLocalPort();
+	}
+	
+	public void shutdown(){
+		this.shutdown = true;
 	}
 }
