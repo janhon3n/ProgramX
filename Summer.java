@@ -9,9 +9,13 @@ public class Summer extends Thread {
 
 	private DataLocker dl;
 	private ServerSocket serverSocket;
+	
+	private final int index;
+	private final SharedData sharedData;
 
-	public Summer(DataLocker dl) throws IOException{
-		this.dl = dl;
+	public Summer(SharedData sd, int index) throws IOException{
+		this.sharedData = sd;
+		this.index = index;
 		serverSocket = new ServerSocket(0);
 	}
 	
@@ -32,7 +36,7 @@ public class Summer extends Thread {
 						s.close();
 						return;
 					}
-					dl.add(value);
+					sharedData.addToLocker(index, value);
 				}
 			}
 		} catch(Exception e){

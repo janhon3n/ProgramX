@@ -17,6 +17,8 @@ public class ClientStreamHandlerX {
 	private ObjectOutputStream oOut;
 	private ObjectInputStream oIn;
 	
+	private SharedData sharedData;
+	private Summer[] summers;
 	
 
 	public ClientStreamHandlerX(Socket s) throws Exception {
@@ -35,18 +37,17 @@ public class ClientStreamHandlerX {
 	}
 	
 	
-	public synchronized void listen() throws Exception{
+	public void listen() throws Exception {
 		try{
 			int clients = oIn.readInt();
 			System.out.println("Recieved integer: "+clients);
 			
-			DataLocker[] dataLockers = new DataLocker[clients];
-			Summer[] summers = new Summer[clients];
+			sharedData = new SharedData(clients);
+			summers = new Summer[clients];
 			
 			for(int i = 0; i < clients; i++){
-				DataLocker dl = new DataLocker();
-				Summer summer = new Summer(dl);
-				dataLockers[i] = dl;
+				Summer summer = new Summer(sharedData, i);
+				summer.setPriority(Thread.currentThread().getPriority() +1);
 				summers[i] = summer;
 				summer.start();
 
@@ -64,65 +65,30 @@ public class ClientStreamHandlerX {
 					int answer = 0;
 					switch(data){
 						case 0:
-							//close
+							//TODO close
 							break;
 						case 1:
-							answer = sumAll(dataLockers);
+							answer = sharedData.sumAll();
 							break;
 						case 2:
-							answer = getMax(dataLockers);
+							answer = sharedData.getMax();
 							break;
 						case 3:
-							answer = countAll(dataLockers);
+							answer = sharedData.countAll();
 							break;
 						default:
 							answer = -1;
 					}
-					System.out.println("Sending value to Y: "+answer);
+					System.out.println("Sending value to Y: " + answer);
 					oOut.writeInt(answer);
 					oOut.flush();
 				}
 			}
-			// luodaan client määrä summauspalvelimia
-			
-			// jäädään kuuntelemaan Y:n pyyntöjä
-
-			
-		} catch(SocketTimeoutException ste){
-			close();
 		} catch(IOException ioe){
-			close();
+			ioe.printStackTrace(System.out);
 		}
-		
-		close();
 	}
 
-	public int sumAll(DataLocker[] dls){
-		int sum = 0;
-		for(DataLocker dl : dls){
-			sum += dl.getSum();
-		}
-		return sum;
-	}
-	
-	public int getMax(DataLocker[] dls){
-		int max = dls[0].getSum();
-		for(int i = 1; i < dls.length; i++){
-			if(dls[i].getSum() > max){
-				max = dls[i].getSum();
-			}
-		}
-		return max;
-	}
-	
-	public int countAll(DataLocker[] dls){
-		int count = 0;
-		for(DataLocker dl : dls){
-			count += dl.getCount();
-		}
-		return count;
-	}
-	
 	public void close() throws IOException{
 		oOut.writeInt(-1);
 		oOut.flush();
@@ -132,5 +98,4 @@ public class ClientStreamHandlerX {
 		iS.close();
 		s.close();
 	}
-		
 }
